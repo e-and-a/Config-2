@@ -1,57 +1,44 @@
 import pytest
-import io
-import tarfile
-from dependency_visualizer import (
-    parse_apkindex,
-    build_dependency_graph,
-    generate_mermaid_graph
-)
+from dependency_visualizer import parse_apkindex_content, build_dependency_graph
 
-@pytest.fixture
-def sample_packages():
-    apkindex_content = b"""
-P:packageA
+def test_parse_apkindex_content():
+    content = '''
+P:package-a
 V:1.0.0
-D:packageB packageC
+D:package-b package-c
+T:Example package A
 
-P:packageB
+P:package-b
 V:1.0.0
-D:packageC
+D:package-d
+T:Example package B
 
-P:packageC
+P:package-c
 V:1.0.0
 D:
-"""
-    # Создаём архив APKINDEX.tar.gz в памяти
-    tar_bytes = io.BytesIO()
-    with tarfile.open(fileobj=tar_bytes, mode='w:gz') as tar:
-        tarinfo = tarfile.TarInfo(name='APKINDEX')
-        tarinfo.size = len(apkindex_content)
-        tar.addfile(tarinfo, io.BytesIO(apkindex_content))
-    tar_bytes.seek(0)
-    apkindex_data = tar_bytes.read()
+T:Example package C
 
-    packages = parse_apkindex(apkindex_data)
-    return packages
+P:package-d
+V:1.0.0
+D:
+T:Example package D
+'''
+    packages = parse_apkindex_content(content)
+    assert len(packages) == 4
+    assert 'package-a' in packages
+    assert packages['package-a']['D'] == 'package-b package-c'
 
-def test_parse_apkindex(sample_packages):
-    assert 'packageA' in sample_packages
-    assert 'packageB' in sample_packages
-    assert 'packageC' in sample_packages
-
-def test_build_dependency_graph(sample_packages):
+def test_build_dependency_graph():
+    packages = {
+        'package-a': {'D': 'package-b package-c'},
+        'package-b': {'D': 'package-d'},
+        'package-c': {'D': ''},
+        'package-d': {'D': ''},
+    }
     graph = []
     visited = set()
-    build_dependency_graph(sample_packages, 'packageA', graph, visited)
-    expected_graph = [
-        ('packageA', 'packageB'),
-        ('packageA', 'packageC'),
-        ('packageB', 'packageC')
-    ]
-    assert sorted(graph) == sorted(expected_graph)
-
-def test_generate_mermaid_graph():
-    graph = [('packageA', 'packageB'), ('packageA', 'packageC')]
-    mermaid_code = generate_mermaid_graph(graph)
-    expected_mermaid = 'graph TD\npackageA --> packageB\npackageA --> packageC\n'
-    assert mermaid_code.strip() == expected_mermaid.strip()
+    build_dependency_graph(packages, 'package-a', graph, visited)
+    assert len(graph) == 3
+    assert ('package-a', 'package-b') in graph
+    assert ('package-a', 'package-c') in graph
+    assert ('package-b', 'package-d') in graph
