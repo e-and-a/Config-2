@@ -1,0 +1,12 @@
+P:packageA
+V:1.0.0
+D:packageB packageC
+
+P:packageB
+V:1.0.0
+D:packageC
+
+P:packageC
+V:1.0.0
+D:
+
