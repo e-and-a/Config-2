@@ -23,7 +23,7 @@
     Параметры:
     content (str): Содержимое файла APKINDEX.
 
-    *Возвращает: packages (dict): Словарь с информацией о пакетах.*
+    Возвращает: packages (dict): Словарь с информацией о пакетах.
 
 **build_dependency_graph(packages, pkg_name, graph, visited, depth=0, max_depth=10):**
 
